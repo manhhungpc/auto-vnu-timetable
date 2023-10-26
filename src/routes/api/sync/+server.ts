@@ -2,7 +2,24 @@ import { errorMsg } from 'src/utils/error-msg';
 import type { RequestHandler } from '../$types';
 import { json } from '@sveltejs/kit';
 import { extractHTMLContent } from '$lib/sync-dsdk';
-import { createPRs } from '$lib/server/githubService';
+import { createPRs, getLastDsdkFile, lastSyncAt } from '$lib/server/githubService';
+import { syncStatus } from '$lib/helper';
+
+export const GET: RequestHandler = async () => {
+	try {
+		const { updated_at } = await lastSyncAt();
+		const sync_status = syncStatus(updated_at);
+		return json({
+			status: 201,
+			data: { updated_at, sync_status }
+		});
+	} catch (err) {
+		return json({
+			status: 500,
+			data: 'Server error!'
+		});
+	}
+};
 
 export const POST: RequestHandler = async ({ request }) => {
 	try {

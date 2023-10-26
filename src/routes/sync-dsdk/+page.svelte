@@ -1,7 +1,8 @@
 <script lang="ts">
 	import { TabGroup, Tab } from '@skeletonlabs/skeleton';
+	import { onMount } from 'svelte';
 
-	let lastSyncDate = new Date().toLocaleDateString('en-GB');
+	let lastSyncDate: string;
 	let tab: string = 'sync_from_web';
 	let fileName: string, description: string, fileData: any, errorMsg: string;
 
@@ -21,6 +22,15 @@
 		});
 		const res = await responseData.json();
 	}
+
+	onMount(async () => {
+		const sync = await fetch('/api/sync', {
+			method: 'GET'
+		});
+
+		const syncInfo = await sync.json();
+		lastSyncDate = new Date(syncInfo.data.updated_at).toLocaleDateString('vi');
+	});
 </script>
 
 <main class="flex flex-col items-center pt-4">
@@ -32,16 +42,16 @@
 	<p>Được cập nhật lần cuối vào {lastSyncDate}</p>
 
 	<div class="intro">
-		<p class="leading-relaxed mt-3 p-3 rounded-md bg-surface-700">
-			Từ dữ liệu file <code>.pdf</code> bạn gửi lên, mình chỉ có thể lấy được các lớp được liệt kê
-			trong file. Đôi khi, thời khóa biểu từ file <code>.pdf</code> sẽ thiếu 1 số lớp lý thuyết/thực
-			hành nên mình cần phải lấy toàn bộ dữ liệu về thời khóa biểu môn học/lớp học/giảng viên, tránh
-			thiếu sót lớp trong lúc xử lý.
+		<p class="leading-relaxed mt-3 p-3 rounded-md bg-surface-700 text-primary-500">
+			<i class="fa-solid fa-circle-info fa-lg" />
+			Từ dữ liệu file pdf bạn gửi lên, tool chỉ có thể lấy được các lớp được liệt kê trong file. Đôi
+			khi, thời khóa biểu từ file pdf sẽ thiếu 1 số lớp lý thuyết/thực hành nên tool cần phải lấy toàn
+			bộ dữ liệu về thời khóa biểu môn học/lớp học/giảng viên, tránh thiếu sót lớp trong lúc xử lý.
 		</p>
 		<h3 class="h3 text-warning-400 mt-3">1. Những lưu ý khi cập nhật dữ liệu</h3>
 		<ul>
 			<li>
-				- Chỉ cập nhật dữ liệu mới khi thời gian đồng bộ cuối chưa phải thời gian của học kỳ hiện
+				- Chỉ cập nhật dữ liệu mới khi thời gian đồng bộ cuối CHƯA phải thời gian của học kỳ hiện
 				tại
 			</li>
 			<li>- Nên cập nhật lại dữ liệu khi có thay đổi về lịch học trong lúc web dangkyhoc vẫn mở</li>
@@ -52,7 +62,7 @@
 		</ul>
 		<h3 class="h3 text-warning-400 mt-3">2. Hướng dẫn cập nhật dữ liệu</h3>
 	</div>
-	<div class="max-w-3xl w-full pb-14">
+	<div class="update-instruct">
 		<TabGroup>
 			<Tab bind:group={tab} name="tab1" value="sync_from_web">
 				<span>Với web</span>
@@ -69,7 +79,8 @@
 							<span class="flex-auto">
 								Đăng nhập vào trang
 								<a href="https://dangkyhoc.vnu.edu.vn/dang-nhap" class="link">dangkyhoc</a>
-								&#11106; Đăng ký môn học &#11106; Đăng ký học ngành 1
+								<i class="fa-solid fa-right-long mx-1" /> Đăng ký môn học
+								<i class="fa-solid fa-right-long mx-1" /> Đăng ký học ngành 1
 							</span>
 						</li>
 						<div class="w-full">
@@ -79,8 +90,9 @@
 						<li>
 							<span>2.</span>
 							<span class="flex-auto">
-								Lưu trang bằng cách nhấn Ctrl + S hoặc chuột phải &#11106; Save as ...</span
-							>
+								Lưu trang bằng cách nhấn Ctrl + S hoặc chuột phải
+								<i class="fa-solid fa-right-long mx-1" /> Save as ...
+							</span>
 						</li>
 						<li>
 							<span>3.</span>
@@ -105,14 +117,6 @@
 								<span>File HTML (.html) ở bước trên</span>
 								<span class="text-red-500">*</span>
 								<input class="input" type="file" bind:files={fileData} />
-								<!-- <FileButton
-									name="files"
-									width="w-full"
-									on:change={(e) => {
-										//@ts-ignore
-										fileData = e.target.files[0];
-									}}
-								/> -->
 							</div>
 							<div class="w-full flex justify-end">
 								<button type="button" class="btn bg-primary-500 mt-3" on:click={onSyncDsdk}>
@@ -133,6 +137,12 @@
 	.intro {
 		width: 48rem;
 		/* padding-top: 5rem; */
+	}
+
+	.update-instruct {
+		padding-bottom: 3.5rem;
+		max-width: 48rem;
+		width: 100%;
 	}
 
 	li {

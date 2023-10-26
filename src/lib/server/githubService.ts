@@ -96,23 +96,43 @@ async function uploadDsdkData(branchName: string, content: string) {
 
 export async function getLastDsdkFile() {
 	const dirDsdk = 'static/DSDK';
-	const infoResponse = await fetch(`${api_url}/contents/${dirDsdk}`, {
+	const infoResponse = await fetch(`${api_url}/contents/${encodeURIComponent(dirDsdk)}`, {
 		method: 'GET',
 		headers
 	});
 
 	const fileInfos: any[] = await infoResponse.json();
+	console.log('🚀 ~ file: githubService.ts:101 ~ fileInfos:', fileInfos);
 	fileInfos.sort((f1, f2) => {
 		const timeF1 = parseInt(f1.name.match(/\d+/)?.[0]);
 		const timeF2 = parseInt(f2.name.match(/\d+/)?.[0]);
+		if (!timeF1 || !timeF2) return f2 - f1;
 		return timeF2 - timeF1;
 	});
 
+	const updateAt = fileInfos[0].name.match(new RegExp(/\[(\d+)\]/))[0].slice(1, -1);
 	const lastestDSDK = fileInfos[0].download_url;
 
 	const content = await fetch(lastestDSDK, {
 		method: 'GET'
 	});
 
-	return await content.json();
+	return {
+		update_at: updateAt,
+		data: await content.json()
+	};
+}
+
+export async function lastSyncAt() {
+	const dirDsdk = 'static/DSDK';
+	const sync = await fetch(`${api_url}/commits?path=${encodeURIComponent(dirDsdk)}`, {
+		method: 'GET'
+	});
+
+	const lastSync = (await sync.json())[0];
+	const updated_at = lastSync.commit.author.date;
+
+	return {
+		updated_at
+	};
 }

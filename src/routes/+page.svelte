@@ -1,14 +1,29 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { FileDropzone, Stepper, Step } from '@skeletonlabs/skeleton';
+	import { FileDropzone, Stepper, Step, popup, type PopupSettings } from '@skeletonlabs/skeleton';
 	import Loading from 'src/components/Loading.svelte';
 	import { scheduleData } from 'src/utils/store';
+	import { onMount } from 'svelte';
 	import { slide } from 'svelte/transition';
 
 	let uploading = false,
-		lastSyncDate = new Date().toLocaleDateString('en-GB'),
+		isDownloadReady = false,
 		autoUpload = false,
 		showTutorial = true;
+	let lastSyncDate: string,
+		syncNum: number = 0;
+	const syncMsgs = [
+		'Unknow - Không có thông tin cập nhật!',
+		'Tốt - Dữ liệu cập nhật gần nhất ít hơn 30 ngày',
+		'Tạm ổn - Dữ liệu cập nhật gần nhất khoảng 30 - 90 ngày',
+		'Tệ - Dữ liệu cập nhật gần nhất đã quá 90 ngày'
+	];
+	const statusTooltip: PopupSettings = {
+		event: 'hover',
+		target: 'statusTooltip',
+		placement: 'bottom',
+		middleware: { offset: 3 }
+	};
 
 	async function uploadFile(e: Event) {
 		//@ts-ignore
@@ -24,6 +39,7 @@
 		});
 		const res = await responseData.json();
 		uploading = false;
+		isDownloadReady = true;
 		scheduleData.set(res.data);
 
 		if (autoUpload) {
@@ -34,16 +50,37 @@
 	function completeProcess() {
 		goto('/result');
 	}
+
+	onMount(async () => {
+		const sync = await fetch('/api/sync', {
+			method: 'GET'
+		});
+
+		const syncInfo = await sync.json();
+		lastSyncDate = new Date(syncInfo.data.updated_at).toLocaleDateString('vi');
+		syncNum = syncInfo.data.sync_status;
+	});
 </script>
 
 <div class="main">
-	<h1 class="h1">Tool auto tạo thời khóa biểu <i class="fa-regular fa-calendar-days" /></h1>
-	<p>Cập nhật dữ liệu từ web dangkyhoc lần cuối vào {lastSyncDate}</p>
+	<h1 class="h1">Tool tự động tạo thời khóa biểu <i class="fa-regular fa-calendar-days" /></h1>
+	<a href="/sync-dsdk" class="[&>*]:pointer-events-none link my-4" use:popup={statusTooltip}>
+		Cập nhật dữ liệu từ web dangkyhoc lần cuối vào {lastSyncDate}
+	</a>
+	<div
+		class="card p-2 text-sm"
+		class:variant-filled-success={syncNum == 1}
+		class:variant-filled-warning={syncNum == 2}
+		class:variant-filled-error={syncNum == 3}
+		data-popup="statusTooltip"
+	>
+		<p>Trạng thái: {syncMsgs[syncNum]}</p>
+	</div>
 	<div class="intro">
-		<h3 class="h3 text-warning-400 mt-5 mb-2">Mục đích sử dụng</h3>
+		<h3 class="h3 text-warning-400 mb-2">Mục đích sử dụng</h3>
 		<p>
 			Tool được tạo ra nhằm hỗ trợ trực quan hóa thời khóa biểu (từ file pdf sang excel), giúp các
-			bạn sinh viên dễ dàng nắm được lịch học tập. Trong file excel bao gồm các thông tin như: tên
+			bạn sinh viên dễ dàng nắm được lịch học tập. Trong file excel bao gồm các thông tin như: Tên
 			môn học, thời gian học, số tiết, giảng đường, tên giảng viên ...
 		</p>
 
@@ -66,43 +103,41 @@
 				class="w-full"
 				on:complete={completeProcess}
 			>
-				<Step class="w-[55vw]">
+				<Step class="w-full px-3">
 					<svelte:fragment slot="header">Lấy kết quả đăng ký học</svelte:fragment>
 					<div class="h-[50vh]">
 						Đăng nhập vào dangkyhoc → "In đăng ký học" → "In kết quả"
 						<div class="flex justify-center w-full">
-							<img src="/img/step-1-get-pdf.png" alt="step-1-get-pdf" class="h-[48vh] pt-2" />
+							<img src="/img/step-1-get-pdf.png" alt="step-1-get-pdf" class="img-instruct" />
 						</div>
 					</div>
 				</Step>
-				<Step class="w-[55vw]">
+				<Step class="w-full px-3">
 					<svelte:fragment slot="header">Lưu kết quả đăng ký học thành file .pdf.</svelte:fragment>
 					<div class="h-[50vh]">
 						Ở cửa sổ popup, chọn các tùy chỉnh file pdf giống ảnh sau:
 						<div class="flex justify-center w-full">
 							<a href="/img/step-2-get-pdf.png" target="_blank" class="hover:cursor-zoom-in">
-								<img src="/img/step-2-get-pdf.png" alt="step-2-get-pdf" class="h-[48vh] pt-2" />
+								<img src="/img/step-2-get-pdf.png" alt="step-2-get-pdf" class="img-instruct" />
 							</a>
 						</div>
 					</div>
 				</Step>
-				<Step class="w-[55vw]">
+				<Step class="w-full px-3">
 					<svelte:fragment slot="header">
 						Upload/kéo thả file pdf tải xuống vừa rồi vào ô phía dưới
 					</svelte:fragment>
 					<div class="h-[50vh]">
-						<img src="/img/step-3-get-pdf.png" alt="step-3-get-pdf" class="h-[48vh] pt-2" />
+						<img src="/img/step-3-get-pdf.png" alt="step-3-get-pdf" class="img-instruct" />
 					</div>
 				</Step>
-				<Step class="w-[55vw]">
+				<Step class="w-full px-3">
 					<svelte:fragment slot="header">
-						Ấn nút "Xong!" và chờ đợi mình xử lý nhé <i
-							class="fa-solid fa-heart"
-							style="color: #fe251b;"
-						/>
+						Ấn nút "Xong!" và chờ đợi mình xử lý nhé
+						<i class="fa-solid fa-heart" style="color: #fe251b;" />
 					</svelte:fragment>
 					<div class="h-[50vh] flex justify-center w-full">
-						<img src="/img/quasor.gif" alt="step-4-get-pdf" class="h-[48vh] pt-2" />
+						<img src="/img/quasor.gif" alt="step-4-get-pdf" class="img-instruct" />
 					</div>
 				</Step>
 			</Stepper>
@@ -110,9 +145,22 @@
 	{/if}
 
 	<div class="file-upload">
+		<label class="w-full flex justify-center space-x-2 my-3 accent-primary-500">
+			<input
+				class="checkbox"
+				type="checkbox"
+				checked={autoUpload}
+				on:change={() => (autoUpload = !autoUpload)}
+			/>
+			<p>Tự động xử lý khi upload file</p>
+		</label>
 		{#if uploading}
 			<div class="flex items-center justify-center gap-3 text-2xl loading-holder">
 				Đang upload và xử lý <Loading />
+			</div>
+		{:else if isDownloadReady}
+			<div class="flex items-center justify-center gap-3 text-2xl loading-holder">
+				Đã xử lý file <i class="fa-regular fa-circle-check fa-xl text-success-600" />
 			</div>
 		{:else}
 			<FileDropzone name="files" accept="application/pdf" padding="py-16" on:change={uploadFile}>
@@ -125,18 +173,12 @@
 				<svelte:fragment slot="meta">Hỗ trợ định dang .pdf</svelte:fragment>
 			</FileDropzone>
 		{/if}
-		<label class="w-full flex justify-center space-x-2 mt-3 accent-primary-500">
-			<input
-				class="checkbox"
-				type="checkbox"
-				checked={autoUpload}
-				on:change={() => (autoUpload = !autoUpload)}
-			/>
-			<p>Tự động xử lý khi upload file</p>
-		</label>
+
 		{#if !autoUpload}
 			<div class="w-full flex justify-center pt-3">
-				<button class="btn bg-primary-700" on:click={completeProcess}>Xong!</button>
+				<button class="btn bg-primary-700" disabled={!isDownloadReady} on:click={completeProcess}>
+					Xong!
+				</button>
 			</div>
 		{/if}
 	</div>
@@ -144,9 +186,8 @@
 
 <style>
 	.main {
-		margin: 20px 0 60px 0;
+		margin: 25px 0 20px 0;
 		width: 100%;
-		/* height: 60vh; */
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
@@ -158,13 +199,15 @@
 	}
 
 	.steps {
-		min-width: 48rem;
+		min-width: 50vw;
+		width: 55vw;
 		padding: 1rem;
 		border-radius: 8px;
 		margin-bottom: 20px;
 	}
 
 	.file-upload {
+		border-top: 2px solid #ffffff6a;
 		width: 55vw;
 	}
 
@@ -173,5 +216,11 @@
 		padding: 5rem 0;
 		background-color: #394770;
 		border-radius: 12px;
+	}
+
+	.img-instruct {
+		width: auto;
+		max-height: 48vh;
+		padding-top: 0.5rem;
 	}
 </style>

@@ -1,6 +1,10 @@
 <script lang="ts">
 	import '../app.css';
-	import { TabGroup, Tab, AppBar, TabAnchor } from '@skeletonlabs/skeleton';
+	import { TabGroup, AppBar, TabAnchor } from '@skeletonlabs/skeleton';
+	import { computePosition, autoUpdate, offset, shift, flip, arrow } from '@floating-ui/dom';
+	import { storePopup } from '@skeletonlabs/skeleton';
+
+	storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 </script>
 
 <AppBar class="fixed top-0 left-0 z-10 w-full p-3 h-16 justify-center">
@@ -21,17 +25,14 @@
 			<TabAnchor href="/">
 				<span class="link-nav"> <i class="fa-solid fa-house" /> </span>
 			</TabAnchor>
-			<!-- <TabAnchor href="/how-to">
-				<span class="link-nav"> Hướng dẫn </span>
-			</TabAnchor> -->
 			<TabAnchor href="/sync-dsdk">
 				<span class="link-nav"> Dữ liệu dangkyhoc </span>
 			</TabAnchor>
-			<TabAnchor href="/report-error">
-				<span class="link-nav"> Báo lỗi </span>
+			<TabAnchor href="/feedback">
+				<span class="link-nav"> Phản hồi </span>
 			</TabAnchor>
-			<TabAnchor href="/recommend">
-				<span class="link-nav"> Góp ý </span>
+			<TabAnchor href="https://github.com/manhhungpc/auto-vnu-timetable">
+				<span class="link-nav"> <i class="fa-brands fa-github fa-lg" /> </span>
 			</TabAnchor>
 		</TabGroup>
 	</svelte:fragment>

@@ -1,6 +1,13 @@
 import { readFileSync } from 'fs';
 import { getLastDsdkFile } from './server/githubService';
 
+export enum SyncStatus {
+	UNKNOW = '0',
+	GOOD = '1',
+	NORMAL = '2',
+	BAD = '3'
+}
+
 export function readerBuffer(file: any) {
 	return new Promise((resolve, reject) => {
 		const reader = new FileReader();
@@ -41,13 +48,19 @@ export function rawDataToArray(contentJson: PDFText[]): string[][] {
 }
 
 export async function mergeDsdkData(schedules: Subject[]) {
-	const dsdk: Subject[] = await getLastDsdkFile();
+	const dsdk: Subject[] = (await getLastDsdkFile()).data;
 	let data: any[] = [];
 	for (let schedule of schedules) {
 		const regex = new RegExp(`^${schedule.class_code}.*`);
 		const classDsdk = dsdk.filter((c) => {
 			return regex.test(c.class_code);
 		});
+		console.log('🚀 ~ file: helper.ts:51 ~ classDsdk:', classDsdk);
+
+		if (classDsdk.length == 0) {
+			data = data.concat(schedule);
+			continue;
+		}
 
 		if (classDsdk.length == 1) {
 			schedule.lecturer = classDsdk[0].lecturer;
@@ -69,4 +82,20 @@ export async function mergeDsdkData(schedules: Subject[]) {
 	}
 
 	return data;
+}
+
+export function syncStatus(lastSync: string) {
+	const currentDate = new Date().getTime();
+	const lastSyncDate = new Date(lastSync).getTime();
+
+	const diffTime = Math.abs(currentDate - lastSyncDate);
+
+	const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+	let status = SyncStatus.UNKNOW;
+	if (diffDays < 30) status = SyncStatus.GOOD;
+	else if (diffDays >= 30 && diffDays < 90) status = SyncStatus.NORMAL;
+	else if (diffDays >= 90) status = SyncStatus.BAD;
+
+	return status;
 }
