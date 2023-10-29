@@ -50,12 +50,13 @@ export function rawDataToArray(contentJson: PDFText[]): string[][] {
 export async function mergeDsdkData(schedules: Subject[]) {
 	const dsdk: Subject[] = (await getLastDsdkFile()).data;
 	let data: any[] = [];
+	console.log(schedules);
 	for (let schedule of schedules) {
 		const regex = new RegExp(`^${schedule.class_code}.*`);
 		const classDsdk = dsdk.filter((c) => {
 			return regex.test(c.class_code);
 		});
-		console.log('🚀 ~ file: helper.ts:51 ~ classDsdk:', classDsdk);
+		console.log('🚀 ~ file: helper.ts:58 ~ classDsdk:', classDsdk);
 
 		if (classDsdk.length == 0) {
 			data = data.concat(schedule);
@@ -78,6 +79,8 @@ export async function mergeDsdkData(schedules: Subject[]) {
 				cl.class_code.match(new RegExp(`^${schedule.class_code}.*\(LT\)`))
 			);
 			data.push(classLT, classTH);
+			console.log('🚀 ~ file: helper.ts:80 ~ classTH:', classTH);
+			console.log('🚀 ~ file: helper.ts:80 ~ classLT:', classLT);
 		}
 	}
 
@@ -98,4 +101,20 @@ export function syncStatus(lastSync: string) {
 	else if (diffDays >= 90) status = SyncStatus.BAD;
 
 	return status;
+}
+
+export function handle(fn: any, ...rest: any) {
+	try {
+		return fn(...rest);
+	} catch (error) {
+		throw new Error('Error occur!');
+	}
+}
+
+export async function asyncHandle(fn: any, ...rest: any) {
+	try {
+		return await fn(...rest);
+	} catch (error) {
+		throw new Error('Error occur!');
+	}
 }

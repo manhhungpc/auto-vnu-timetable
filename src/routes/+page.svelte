@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
-	import { FileDropzone, Stepper, Step, popup, type PopupSettings } from '@skeletonlabs/skeleton';
+	import { FileDropzone, Stepper, Step } from '@skeletonlabs/skeleton';
 	import Loading from 'src/components/Loading.svelte';
 	import { scheduleData } from 'src/utils/store';
 	import { onMount } from 'svelte';
@@ -8,22 +8,10 @@
 
 	let uploading = false,
 		isDownloadReady = false,
+		error = '',
 		autoUpload = false,
 		showTutorial = true;
-	let lastSyncDate: string,
-		syncNum: number = 0;
-	const syncMsgs = [
-		'Unknow - Không có thông tin cập nhật!',
-		'Tốt - Dữ liệu cập nhật gần nhất ít hơn 30 ngày',
-		'Tạm ổn - Dữ liệu cập nhật gần nhất khoảng 30 - 90 ngày',
-		'Tệ - Dữ liệu cập nhật gần nhất đã quá 90 ngày'
-	];
-	const statusTooltip: PopupSettings = {
-		event: 'hover',
-		target: 'statusTooltip',
-		placement: 'bottom',
-		middleware: { offset: 3 }
-	};
+	let lastSyncDate: string;
 
 	async function uploadFile(e: Event) {
 		//@ts-ignore
@@ -38,9 +26,14 @@
 			body: formData
 		});
 		const res = await responseData.json();
+
 		uploading = false;
-		isDownloadReady = true;
-		scheduleData.set(res.data);
+		if (res.status == 200) {
+			isDownloadReady = true;
+			scheduleData.set(res.data);
+		} else {
+			error = res.err;
+		}
 
 		if (autoUpload) {
 			completeProcess();
@@ -58,24 +51,15 @@
 
 		const syncInfo = await sync.json();
 		lastSyncDate = new Date(syncInfo.data.updated_at).toLocaleDateString('vi');
-		syncNum = syncInfo.data.sync_status;
 	});
 </script>
 
 <div class="main">
-	<h1 class="h1">Tool tự động tạo thời khóa biểu <i class="fa-regular fa-calendar-days" /></h1>
-	<a href="/sync-dsdk" class="[&>*]:pointer-events-none link my-4" use:popup={statusTooltip}>
-		Cập nhật dữ liệu từ web dangkyhoc lần cuối vào {lastSyncDate}
+	<h1 class="h1">Tool tự động tạo thời khóa biểu</h1>
+	<a href="/sync-dsdk" class="link my-4 text-lg">
+		Cập nhật dữ liệu từ web dangkyhoc gần nhất: {lastSyncDate}
 	</a>
-	<div
-		class="card p-2 text-sm"
-		class:variant-filled-success={syncNum == 1}
-		class:variant-filled-warning={syncNum == 2}
-		class:variant-filled-error={syncNum == 3}
-		data-popup="statusTooltip"
-	>
-		<p>Trạng thái: {syncMsgs[syncNum]}</p>
-	</div>
+
 	<div class="intro">
 		<h3 class="h3 text-warning-400 mb-2">Mục đích sử dụng</h3>
 		<p>
@@ -145,7 +129,10 @@
 	{/if}
 
 	<div class="file-upload">
-		<label class="w-full flex justify-center space-x-2 my-3 accent-primary-500">
+		<label
+			class="w-full flex justify-center space-x-2 my-3 accent-primary-500"
+			style:display={isDownloadReady ? 'none' : ''}
+		>
 			<input
 				class="checkbox"
 				type="checkbox"
@@ -159,8 +146,13 @@
 				Đang upload và xử lý <Loading />
 			</div>
 		{:else if isDownloadReady}
-			<div class="flex items-center justify-center gap-3 text-2xl loading-holder">
+			<div class="flex items-center justify-center gap-3 text-2xl loading-holder mt-5">
 				Đã xử lý file <i class="fa-regular fa-circle-check fa-xl text-success-600" />
+			</div>
+		{:else if error}
+			<div class="flex items-center justify-center gap-3 text-2xl loading-holder mt-5">
+				<i class="fa-regular fa-circle-xmark fa-xl text-error-400" />
+				{error} <a href="/feedback" class="link">Báo lỗi ở đây</a>
 			</div>
 		{:else}
 			<FileDropzone name="files" accept="application/pdf" padding="py-16" on:change={uploadFile}>

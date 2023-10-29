@@ -7,6 +7,9 @@
 	storePopup.set({ computePosition, autoUpdate, offset, shift, flip, arrow });
 </script>
 
+<svelte:head>
+	<title>Tool tự động tạo thời khóa biểu VNU</title>
+</svelte:head>
 <AppBar class="fixed top-0 left-0 z-10 w-full p-3 h-16 justify-center">
 	<svelte:fragment slot="lead" />
 	<TabAnchor href="/">
@@ -27,6 +30,9 @@
 			</TabAnchor>
 			<TabAnchor href="/sync-dsdk">
 				<span class="link-nav"> Dữ liệu dangkyhoc </span>
+			</TabAnchor>
+			<TabAnchor href="/faq">
+				<span class="link-nav"> FAQ </span>
 			</TabAnchor>
 			<TabAnchor href="/feedback">
 				<span class="link-nav"> Phản hồi </span>

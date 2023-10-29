@@ -50,7 +50,8 @@ export async function createPRs(branchName: string, data: PullRequest) {
 
 async function createBranch(name: string) {
 	const baseBranch = await fetch(`${api_url}/git/refs/heads/main`, {
-		method: 'GET'
+		method: 'GET',
+		headers
 	});
 	const shaBase = (await baseBranch.json()).object.sha;
 
@@ -95,26 +96,27 @@ async function uploadDsdkData(branchName: string, content: string) {
 }
 
 export async function getLastDsdkFile() {
-	const dirDsdk = 'static/DSDK';
+	const dirDsdk = 'static/dsdk_data/UET';
 	const infoResponse = await fetch(`${api_url}/contents/${encodeURIComponent(dirDsdk)}`, {
 		method: 'GET',
 		headers
 	});
 
 	const fileInfos: any[] = await infoResponse.json();
-	console.log('🚀 ~ file: githubService.ts:101 ~ fileInfos:', fileInfos);
 	fileInfos.sort((f1, f2) => {
-		const timeF1 = parseInt(f1.name.match(/\d+/)?.[0]);
-		const timeF2 = parseInt(f2.name.match(/\d+/)?.[0]);
+		const timeF1 = parseInt(f1.name?.match(/\d+/)?.[0]);
+		const timeF2 = parseInt(f2.name?.match(/\d+/)?.[0]);
 		if (!timeF1 || !timeF2) return f2 - f1;
 		return timeF2 - timeF1;
 	});
 
-	const updateAt = fileInfos[0].name.match(new RegExp(/\[(\d+)\]/))[0].slice(1, -1);
+	const dateFileRegex = new RegExp(/\[(\d+)\]/);
+	const updateAt = fileInfos[0].name.match(dateFileRegex)?.[0].slice(1, -1);
 	const lastestDSDK = fileInfos[0].download_url;
 
 	const content = await fetch(lastestDSDK, {
-		method: 'GET'
+		method: 'GET',
+		headers
 	});
 
 	return {
@@ -123,14 +125,31 @@ export async function getLastDsdkFile() {
 	};
 }
 
+export async function getLastPulls() {
+	const response = await fetch(`${api_url}/pulls`, {
+		method: 'GET',
+		headers
+	});
+
+	if (response.status === 200) {
+		const pullReqs = await response.json();
+		return pullReqs;
+	} else {
+		console.error('Failed to get pulls');
+		return false;
+	}
+}
+
 export async function lastSyncAt() {
 	const dirDsdk = 'static/DSDK';
 	const sync = await fetch(`${api_url}/commits?path=${encodeURIComponent(dirDsdk)}`, {
-		method: 'GET'
+		method: 'GET',
+		headers
 	});
 
-	const lastSync = (await sync.json())[0];
-	const updated_at = lastSync.commit.author.date;
+	const response = await sync.json();
+	const lastSync = response[0];
+	const updated_at = lastSync?.commit.author.date;
 
 	return {
 		updated_at

@@ -1,10 +1,17 @@
 <script lang="ts">
-	import { TabGroup, Tab } from '@skeletonlabs/skeleton';
+	import { TabGroup, Tab, type PopupSettings, popup } from '@skeletonlabs/skeleton';
 	import { onMount } from 'svelte';
 
-	let lastSyncDate: string;
+	let lastSyncDate: string = '',
+		lastPulls: string = '',
+		syncStatus: number = 0;
 	let tab: string = 'sync_from_web';
 	let fileName: string, description: string, fileData: any, errorMsg: string;
+	const statusInfo: PopupSettings = {
+		event: 'hover',
+		target: 'statusInfo',
+		placement: 'right'
+	};
 
 	async function onSyncDsdk() {
 		if (!fileName || !fileData) {
@@ -30,6 +37,8 @@
 
 		const syncInfo = await sync.json();
 		lastSyncDate = new Date(syncInfo.data.updated_at).toLocaleDateString('vi');
+		lastPulls = syncInfo.data.lastPullDate;
+		syncStatus = syncInfo.data.sync_status;
 	});
 </script>
 
@@ -39,25 +48,59 @@
 		<a href="https://dangkyhoc.vnu.edu.vn/dang-nhap" class="link">dangkyhoc</a>
 	</h2>
 
-	<p>Được cập nhật lần cuối vào {lastSyncDate}</p>
-
 	<div class="intro">
+		<div class="bg-surface-700 p-3 rounded-md flex justify-evenly">
+			<p class="text-lg">
+				Cập nhật lần cuối: {lastSyncDate}
+				<span class="[&>*]:pointer-events-none" use:popup={statusInfo}>
+					{#if syncStatus == 1}
+						<i class="fa-regular fa-circle-check text-success-500" />
+					{:else if syncStatus == 2}
+						<i class="fa-solid fa-triangle-exclamation text-warning-500" />
+					{:else if syncStatus == 3}
+						<i class="fa-regular fa-circle-xmark text-error-400" />
+					{:else}
+						<i class="fa-regular fa-circle-question text-surface-400" />
+					{/if}
+				</span>
+			</p>
+			<div class="card p-3 variant-filled-surface leading-7" data-popup="statusInfo">
+				<p>Trạng thái dữ liệu được đồng bộ với dangkyhoc chia như sau:</p>
+				<p class="text-success-500">
+					<i class="fa-regular fa-circle-check" /> Tin cậy - Dữ liệu cập nhật gần nhất ít hơn 30 ngày
+				</p>
+				<p class="text-warning-500">
+					<i class="fa-solid fa-triangle-exclamation" /> Chấp nhận được - Dữ liệu cập nhật gần nhất khoảng
+					30 - 90 ngày
+				</p>
+				<p class="text-error-400">
+					<i class="fa-regular fa-circle-xmark" /> Sai lệch - Dữ liệu cập nhật gần nhất đã quá 90 ngày,
+					cần thay mới
+				</p>
+			</div>
+			<div style="border: 1px  solid #fff" />
+			<p class="text-lg">Đang chờ cập nhật: {lastPulls}</p>
+		</div>
 		<p class="leading-relaxed mt-3 p-3 rounded-md bg-surface-700 text-primary-500">
 			<i class="fa-solid fa-circle-info fa-lg" />
-			Từ dữ liệu file pdf bạn gửi lên, tool chỉ có thể lấy được các lớp được liệt kê trong file. Đôi
-			khi, thời khóa biểu từ file pdf sẽ thiếu 1 số lớp lý thuyết/thực hành nên tool cần phải lấy toàn
-			bộ dữ liệu về thời khóa biểu môn học/lớp học/giảng viên, tránh thiếu sót lớp trong lúc xử lý.
+			Từ dữ liệu file pdf bạn gửi lên, tool chỉ có thể lấy được các lớp được liệt kê trong file và có
+			thể sẽ bị thiếu 1 số lớp lý thuyết/thực hành. Do đó tool cần phải lấy toàn bộ dữ liệu về thời khóa
+			biểu môn học/lớp học/giảng viên, tránh thiếu sót lớp trong lúc xử lý.
+			<br /><br />
+			Rất cảm ơn các bạn mỗi kỳ đều cập nhật danh sách đăng ký học mới !
 		</p>
 		<h3 class="h3 text-warning-400 mt-3">1. Những lưu ý khi cập nhật dữ liệu</h3>
 		<ul>
 			<li>
-				- Chỉ cập nhật dữ liệu mới khi thời gian đồng bộ cuối CHƯA phải thời gian của học kỳ hiện
-				tại
+				- Chỉ nên cập nhật dữ liệu mới khi thời gian "Cập nhật lần cuối" và "Đang chờ cập nhật" CHƯA
+				phải thời gian của học kỳ hiện tại (tránh ngỏm server 😵).
 			</li>
-			<li>- Nên cập nhật lại dữ liệu khi có thay đổi về lịch học trong lúc web dangkyhoc vẫn mở</li>
 			<li>
-				- Kiểm tra trạng thái cập nhật tại đây. Bạn cũng chỉ nên cập nhật khi chưa có ai gửi dữ liệu
-				lên, tránh quá tải server 😵
+				- Nên cập nhật lại dữ liệu khi có thay đổi về lịch học trong lúc web dangkyhoc vẫn mở.
+			</li>
+			<li>
+				- Nếu bạn có bất kỳ thắc mắc nào liên quan, xem mục <a href="/faq" class="link">FAQ</a>
+				hoặc <a href="/feedback" class="link">liên hệ mình</a> nhé :))
 			</li>
 		</ul>
 		<h3 class="h3 text-warning-400 mt-3">2. Hướng dẫn cập nhật dữ liệu</h3>
@@ -135,6 +178,7 @@
 
 <style>
 	.intro {
+		margin-top: 30px;
 		width: 48rem;
 		/* padding-top: 5rem; */
 	}

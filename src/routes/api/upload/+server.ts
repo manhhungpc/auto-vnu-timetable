@@ -2,7 +2,7 @@ import { extractPDF } from '$lib/pdfreader';
 import { errorMsg } from 'src/utils/error-msg';
 import type { RequestHandler } from '../$types';
 import { json } from '@sveltejs/kit';
-import { mergeDsdkData } from '$lib/helper';
+import { mergeDsdkData, asyncHandle } from '$lib/helper';
 
 export const POST: RequestHandler = async ({ request }) => {
 	let response: any;
@@ -34,7 +34,7 @@ export const POST: RequestHandler = async ({ request }) => {
 		let subjectRow = 11,
 			total = 0;
 
-		// If the first column of a row is NOT a number (không có cột STT), we will assume it end of data contain subjects
+		// If the first column of a row is NOT a number (hàng không có cột STT), we will assume it end of data contain subjects
 		while (!isNaN(pdfData.content[subjectRow][0])) {
 			total++;
 			const content: string[] = pdfData.content[subjectRow];
@@ -79,14 +79,14 @@ export const POST: RequestHandler = async ({ request }) => {
 			subjectRow++;
 		}
 
-		const fullData = await mergeDsdkData(subjects.subjects);
+		const fullData = await asyncHandle(mergeDsdkData, subjects.subjects);
 		subjects.subjects = fullData;
 
 		subjects.total = total;
 		response = { status: 200, data: subjects };
 	} catch (err: any) {
 		console.log(err);
-		response = { status: 400, err: 'Error:' + err };
+		response = { status: 400, err: err.toString() };
 	}
 
 	return json(response);
