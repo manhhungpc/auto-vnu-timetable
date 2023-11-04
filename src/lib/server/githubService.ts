@@ -19,8 +19,14 @@ interface PullRequest {
 }
 
 export async function createPRs(branchName: string, data: PullRequest) {
-	await createBranch(branchName);
-	await uploadDsdkData(branchName, data.content);
+	const branch = await createBranch(branchName);
+	const dsdkData = await uploadDsdkData(branchName, data.content);
+
+	if (!dsdkData) {
+		return {
+			err: 'Có lỗi khi xử lý danh sách đăng ký học'
+		};
+	}
 
 	const PRdata = {
 		title: data.title,
@@ -28,11 +34,13 @@ export async function createPRs(branchName: string, data: PullRequest) {
 		head: `${repoOwner}:${branchName}`,
 		base: 'main'
 	};
+	console.log('🚀 ~ file: githubService.ts:31 ~ PRdata:', PRdata);
 	const response = await fetch(`${api_url}/pulls`, {
 		method: 'POST',
 		headers: {
 			Authorization: `Bearer ${token}`,
-			'Content-Type': 'application/json'
+			'Content-Type': 'application/json',
+			Accept: 'application/vnd.github+json'
 		},
 		body: JSON.stringify(PRdata)
 	});
@@ -67,31 +75,35 @@ async function createBranch(name: string) {
 
 	const newBranch = await response.json();
 	console.log(response.status);
-	console.log('🚀 ~ file: create-issue.ts:81 ~ newBranch:', newBranch);
 }
 
 async function uploadDsdkData(branchName: string, content: string) {
-	// const jsonFile = readFileSync('static/DSDK/subject_formated_2.json').toString('base64');
 	const createDate = new Date().getTime();
-	const uploadPath = `static/UET/dsdk-[${createDate}].json`;
+	const uploadPath = `static/DSDK/dsdk-[${createDate}].json`;
 
-	const upload = await fetch(`${api_url}/contents/${uploadPath}`, {
-		method: 'PUT',
-		headers: {
-			Authorization: `Bearer ${token}`
-		},
-		body: JSON.stringify({
-			message: 'Create file',
-			content: content,
-			branch: branchName
-		})
-	});
+	try {
+		const upload = await fetch(`${api_url}/contents/${uploadPath}`, {
+			method: 'PUT',
+			headers: {
+				Authorization: `Bearer ${token}`
+			},
+			body: JSON.stringify({
+				message: `Update dsdk at ${new Date().toLocaleDateString('vi')}`,
+				content: Buffer.from(content).toString('base64'),
+				branch: branchName
+			})
+		});
 
-	if (upload.status === 201) {
-		const file = await upload.json();
-		console.log(`Created file`, file, file.download_url);
-	} else {
-		console.error('Failed to create file');
+		const response = await upload.json();
+		if (upload.status === 201) {
+			console.log(`Created file`, response, response.download_url);
+			return true;
+		} else {
+			console.log('Error: ', response);
+			return false;
+		}
+	} catch (err) {
+		console.error('Failed to create file', err);
 	}
 }
 

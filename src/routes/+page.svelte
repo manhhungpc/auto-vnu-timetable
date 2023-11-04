@@ -11,7 +11,7 @@
 		error = '',
 		autoUpload = false,
 		showTutorial = true;
-	let lastSyncDate: string;
+	let lastSyncDate: string = '--/--/--';
 
 	async function uploadFile(e: Event) {
 		//@ts-ignore
@@ -62,10 +62,18 @@
 
 	<div class="intro">
 		<h3 class="h3 text-warning-400 mb-2">Mục đích sử dụng</h3>
+		- Version dễ hiểu:
+		<a
+			class="link"
+			target="_blank"
+			href="https://github.com/manhhungpc/auto-vnu-timetable#auto-vnu-timetable---t%E1%BA%A1o-th%E1%BB%9Di-kh%C3%B3a-bi%E1%BB%83u-vnu-t%E1%BB%B1-%C4%91%E1%BB%99ng"
+		>
+			TL;DR
+		</a>
 		<p>
-			Tool được tạo ra nhằm hỗ trợ trực quan hóa thời khóa biểu (từ file pdf sang excel), giúp các
-			bạn sinh viên dễ dàng nắm được lịch học tập. Trong file excel bao gồm các thông tin như: Tên
-			môn học, thời gian học, số tiết, giảng đường, tên giảng viên ...
+			- Version dài dòng: Tool được tạo ra để trực quan hóa thời khóa biểu (từ file pdf sang excel),
+			giúp các bạn sinh viên dễ dàng nắm được lịch học tập. Trong file excel bao gồm các thông tin
+			như: Tên môn học, thời gian học, số tiết, giảng đường, tên giảng viên ...
 		</p>
 
 		<div class="flex justify-between items-center w-full">

@@ -2,9 +2,10 @@
 	import { TabGroup, Tab, type PopupSettings, popup } from '@skeletonlabs/skeleton';
 	import { onMount } from 'svelte';
 
-	let lastSyncDate: string = '',
+	let lastSyncDate: string = '--/--/--',
 		lastPulls: string = '',
-		syncStatus: number = 0;
+		syncStatus: number = 0,
+		processing = false;
 	let tab: string = 'sync_from_web';
 	let fileName: string, description: string, fileData: any, errorMsg: string;
 	const statusInfo: PopupSettings = {
@@ -18,6 +19,7 @@
 			errorMsg = 'Có ô bắt buộc đang để trống!';
 		}
 
+		processing = true;
 		const formData = new FormData();
 		formData.append('title', fileName);
 		formData.append('description', description);
@@ -27,7 +29,15 @@
 			method: 'POST',
 			body: formData
 		});
+
+		processing = false;
 		const res = await responseData.json();
+		if (responseData.status == 200) {
+			errorMsg = 'no-error';
+			return true;
+		} else {
+			errorMsg = res.err;
+		}
 	}
 
 	onMount(async () => {
@@ -106,12 +116,18 @@
 		<h3 class="h3 text-warning-400 mt-3">2. Hướng dẫn cập nhật dữ liệu</h3>
 	</div>
 	<div class="update-instruct">
-		<TabGroup>
+		<TabGroup
+			regionList="text-surface-400"
+			active="text-white border-b-2 border-surface-900-50-token"
+		>
 			<Tab bind:group={tab} name="tab1" value="sync_from_web">
 				<span>Với web</span>
 			</Tab>
 			<Tab bind:group={tab} name="tab2" value="sync_with_extension">
 				<span>Với chrome extension</span>
+			</Tab>
+			<Tab bind:group={tab} name="tab2" value="sync_with_fork_gh">
+				<span>Qua đóng góp trên GitHub</span>
 			</Tab>
 			<!-- Tab Panels --->
 			<svelte:fragment slot="panel">
@@ -130,45 +146,72 @@
 							<img src="/img/sync-dsdk-1.png" alt="step-1" />
 						</div>
 
-						<li>
+						<li class="!items-start">
 							<span>2.</span>
 							<span class="flex-auto">
-								Lưu trang bằng cách nhấn Ctrl + S hoặc chuột phải
+								Chọn môn học toàn trường để lấy toàn bộ môn học
+								<br />
+								Sau đó lưu trang bằng cách nhấn Ctrl + S hoặc chuột phải
 								<i class="fa-solid fa-right-long mx-1" /> Save as ...
 							</span>
 						</li>
 						<li>
 							<span>3.</span>
-							<span class="flex-auto"> Điền thông tin vào form dưới và ấn "Gửi" </span>
+							<span class="flex-auto"> Điền thông tin vào form dưới và ấn "Cập nhật" </span>
 						</li>
 						<div class="bg-surface-600 rounded-md p-3">
-							<label class="label mt-3">
-								<span>Tên file</span>
+							<label class="label">
+								<span>Học kỳ</span>
 								<span class="text-red-500">*</span>
 								<input
-									class="input px-3 py-1"
+									class="input px-3 py-1 rounded-lg"
 									type="text"
-									placeholder="VD: HK1_2023-2024"
+									placeholder="VD: HK1-2023-2024"
 									bind:value={fileName}
 								/>
 							</label>
 							<label class="label mt-3">
 								<span>Mô tả</span>
-								<input class="input px-3 py-1" type="text" bind:value={description} />
+								<input class="input px-3 py-1 rounded-lg" type="text" bind:value={description} />
 							</label>
 							<div class="label mt-3">
 								<span>File HTML (.html) ở bước trên</span>
 								<span class="text-red-500">*</span>
-								<input class="input" type="file" bind:files={fileData} />
+								<input class="input rounded-lg" type="file" bind:files={fileData} />
 							</div>
-							<div class="w-full flex justify-end">
+							<div class="w-full mb-3 flex justify-end">
 								<button type="button" class="btn bg-primary-500 mt-3" on:click={onSyncDsdk}>
-									Gửi
+									Cập nhật
 								</button>
 							</div>
+							{#if processing}
+								<div>
+									Đang tạo yêu cầu cập nhật <span class="loading loading-infinity loading-lg" />
+								</div>
+							{/if}
+							{#if errorMsg}
+								<div class="text-error-400 text-lg flex justify-end">Có lỗi xảy ra: {errorMsg}</div>
+							{:else if errorMsg == 'no-error'}
+								<div class="text-success-500 text-lg flex justify-end">
+									Tạo yêu cầu cập nhật thành công!
+								</div>
+							{/if}
 						</div>
+						<li>
+							<span>
+								Sau khi gửi thành công, bạn có thể theo dõi trạng thái chờ file cập nhật
+								<a href="https://github.com/manhhungpc/auto-vnu-timetable/pulls" class="link">
+									trên GitHub này
+								</a>
+								<br />
+								Nếu dữ liệu phù hợp, file bạn gửi sẽ chính thức được sử dụng trong các lần tới của tool
+								:&gt;
+							</span>
+						</li>
 					</ol>
 				{:else if tab === 'sync_with_extension'}
+					<div class="max-w-2xl">Đang thi công</div>
+				{:else if tab === 'sync_with_fork_gh'}
 					<div class="max-w-2xl">Đang thi công</div>
 				{/if}
 			</svelte:fragment>

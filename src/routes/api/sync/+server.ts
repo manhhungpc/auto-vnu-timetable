@@ -25,7 +25,7 @@ export const GET: RequestHandler = async () => {
 		console.log('🚀 ~ file: +server.ts:25 ~ err:', err);
 		return json({
 			status: 500,
-			data: 'Server error!'
+			err: 'Server error!'
 		});
 	}
 };
@@ -38,17 +38,18 @@ export const POST: RequestHandler = async ({ request }) => {
 		const description = formData.get('description') as string;
 
 		const dsdkData = await extractHTMLContent(await dsdk.text());
-		const createDate = new Date().getTime();
-		const pullReq = await createPRs(`dsdk-${createDate}`, {
-			title: title,
-			body: description,
-			content: dsdkData.toString()
+		const createDate = new Date().toLocaleDateString('vi');
+		const pullReq = await createPRs(`sync-dsdk-${crypto.randomUUID().split('-')[0]}`, {
+			title: `[sync] ${title}`,
+			body: description + `\nCreated_at: ${createDate}`,
+			content: JSON.stringify(dsdkData)
 		});
+		console.log('🚀 ~ file: +server.ts:44 ~ pullReq:', pullReq);
 
-		if (!pullReq) {
+		if (pullReq.err) {
 			return json({
 				status: 503,
-				data: 'Failed to created!'
+				err: 'Failed to created!'
 			});
 		}
 
@@ -59,7 +60,7 @@ export const POST: RequestHandler = async ({ request }) => {
 	} catch (err) {
 		return json({
 			status: 500,
-			data: 'Server error!'
+			err: 'Server error!'
 		});
 	}
 };
